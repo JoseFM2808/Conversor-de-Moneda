@@ -4,9 +4,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+// import com.google.gson.JsonObject;
 
 public class ConsultaTipoCambio {
 
@@ -16,7 +18,7 @@ public class ConsultaTipoCambio {
         this.apiKey = apiKey;
     }
 
-    public JsonObject obtenerTasasDeCambio(String monedaBase) throws IOException, InterruptedException {
+    public TasasDeCambio obtenerTasasDeCambio(String monedaBase) throws IOException, InterruptedException {
         String url_str = "https://v6.exchangerate-api.com/v6/" + apiKey + "/latest/" + monedaBase;
         URI uri = URI.create(url_str);
 
@@ -35,6 +37,18 @@ public class ConsultaTipoCambio {
         }
 
         Gson gson = new Gson();
-        return gson.fromJson(response.body(), JsonObject.class);
+        TasasDeCambio tasasDeCambio = gson.fromJson(response.body(), TasasDeCambio.class);
+
+        // Filtrar las monedas
+        Map<String, Double> monedasFiltradas = tasasDeCambio.getConversionRates().entrySet().stream()
+        .filter(entry -> entry.getKey().equals("ARS") || entry.getKey().equals("BOB") || 
+                         entry.getKey().equals("BRL") || entry.getKey().equals("CLP") || 
+                         entry.getKey().equals("COP") || entry.getKey().equals("USD"))
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
+        tasasDeCambio.setConversionRates(monedasFiltradas);
+
+        return tasasDeCambio;
+
     }
 }
