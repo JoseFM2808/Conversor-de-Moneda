@@ -8,11 +8,11 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
-// import com.google.gson.JsonObject;
+import com.google.gson.JsonObject;
 
 public class ConsultaTipoCambio {
 
-    private final String apiKey; 
+    private final String apiKey;
 
     public ConsultaTipoCambio(String apiKey) {
         this.apiKey = apiKey;
@@ -25,26 +25,31 @@ public class ConsultaTipoCambio {
         HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(uri)
-                .header("Accept-Language", "es-ES") // Ejemplo de header
-                .timeout(Duration.ofSeconds(10)) // Timeout de 10 segundos
+                .header("Accept-Language", "es-ES")
+                .timeout(Duration.ofSeconds(10))
                 .build();
 
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-        // Verificar el código de estado de la respuesta
         if (response.statusCode() != 200) {
             throw new RuntimeException("Error en la solicitud: " + response.statusCode());
         }
 
         Gson gson = new Gson();
-        TasasDeCambio tasasDeCambio = gson.fromJson(response.body(), TasasDeCambio.class);
 
-        // Filtrar las monedas
+        JsonObject jsonObject = gson.fromJson(response.body(), JsonObject.class);
+
+        JsonObject conversionRatesJson = jsonObject.getAsJsonObject("conversion_rates");
+
+        Map<String, Double> conversionRates = gson.fromJson(conversionRatesJson, Map.class);
+
+        TasasDeCambio tasasDeCambio = new TasasDeCambio(conversionRates);
+
         Map<String, Double> monedasFiltradas = tasasDeCambio.getConversionRates().entrySet().stream()
-        .filter(entry -> entry.getKey().equals("ARS") || entry.getKey().equals("BOB") || 
-                         entry.getKey().equals("BRL") || entry.getKey().equals("CLP") || 
-                         entry.getKey().equals("COP") || entry.getKey().equals("USD"))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .filter(entry -> entry.getKey().equals("ARS") || entry.getKey().equals("BOB") ||
+                        entry.getKey().equals("BRL") || entry.getKey().equals("CLP") ||
+                        entry.getKey().equals("COP") || entry.getKey().equals("USD"))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         tasasDeCambio.setConversionRates(monedasFiltradas);
 

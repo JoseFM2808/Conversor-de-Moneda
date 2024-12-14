@@ -1,7 +1,12 @@
 import java.util.Map;
 
 public class TasasDeCambio {
+
     private Map<String, Double> conversionRates;
+
+    public TasasDeCambio(Map<String, Double> conversionRates) {
+        this.conversionRates = conversionRates;
+    }
 
     public Map<String, Double> getConversionRates() {
         return conversionRates;
